@@ -10,7 +10,7 @@ setup(
     license='Apache 2.0',
     packages=['jwtauthenticator'],
     install_requires=[
-        'jupyterhub==3.3.8',
+        'jupyterhub',
         'pyjwt==2.0.1',
     ]
 )
