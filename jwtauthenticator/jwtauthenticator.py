@@ -86,7 +86,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
             raise web.HTTPError(401)
 
     @staticmethod
-    def verify_jwt_with_claims(token, signing_certificate, algorithms, audience, logger):
+    def verify_jwt_with_claims(token, signing_certificate, algorithms, audience, logger=None):
         opts = {}
         if not audience:
             opts = {"verify_aud": False}
@@ -98,11 +98,11 @@ class JSONWebTokenLoginHandler(BaseHandler):
         opts = {}
         if not audience:
             opts = {"verify_aud": False}
-        logger.warning("jwt: %s" % json_web_token)
-        logger.log.warning("sec: %s" % secret)
-        logger.log.warning("alg: %s" % algorithms)
-        logger.log.warning("aud: %s" % audience)
-        logger.log.warning("opt: %s" % opts)
+        logger.warning("jwt: %s", json_web_token)
+        logger.warning("sec: %s", secret)
+        logger.warning("alg: %s", algorithms)
+        logger.warning("aud: %s", audience)
+        logger.warning("opt: %s", opts)
         return jwt.decode(json_web_token, secret, algorithms=algorithms, audience=audience, options=opts)
 
     @staticmethod
