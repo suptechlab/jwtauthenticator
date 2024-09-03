@@ -13,7 +13,6 @@ from traitlets import (
     Unicode,
 )
 from urllib import parse
-import warnings
 
 class JSONWebTokenLoginHandler(BaseHandler):
     async def get(self):
@@ -66,9 +65,9 @@ class JSONWebTokenLoginHandler(BaseHandler):
 
         try:
             if secret:
-                claims = self.verify_jwt_using_secret(token, secret, algorithms, audience)
+                claims = self.verify_jwt_using_secret(token, secret, algorithms, audience, self.log)
             elif signing_certificate:
-                claims = self.verify_jwt_with_claims(token, signing_certificate, algorithms, audience)
+                claims = self.verify_jwt_with_claims(token, signing_certificate, algorithms, audience, self.log)
             else:
                 return self.auth_failed(auth_url)
         except jwt.exceptions.InvalidTokenError:
@@ -87,7 +86,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
             raise web.HTTPError(401)
 
     @staticmethod
-    def verify_jwt_with_claims(token, signing_certificate, algorithms, audience):
+    def verify_jwt_with_claims(token, signing_certificate, algorithms, audience, logger):
         opts = {}
         if not audience:
             opts = {"verify_aud": False}
@@ -95,15 +94,15 @@ class JSONWebTokenLoginHandler(BaseHandler):
             return jwt.decode(token, rsa_public_key_file.read(), audience=audience, algorithms=algorithms, options=opts)
 
     @staticmethod
-    def verify_jwt_using_secret(json_web_token, secret, algorithms, audience):
+    def verify_jwt_using_secret(json_web_token, secret, algorithms, audience, logger=None):
         opts = {}
         if not audience:
             opts = {"verify_aud": False}
-        warnings.warn("jwt: %s" % json_web_token)
-        warnings.warn("sec: %s" % secret)
-        warnings.warn("alg: %s" % algorithms)
-        warnings.warn("aud: %s" % audience)
-        warnings.warn("opt: %s" % opts)
+        logger.warning("jwt: %s" % json_web_token)
+        logger.log.warning("sec: %s" % secret)
+        logger.log.warning("alg: %s" % algorithms)
+        logger.log.warning("aud: %s" % audience)
+        logger.log.warning("opt: %s" % opts)
         return jwt.decode(json_web_token, secret, algorithms=algorithms, audience=audience, options=opts)
 
     @staticmethod
