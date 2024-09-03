@@ -1,16 +1,16 @@
 from setuptools import setup
 
 setup(
-    name='jupyterhub-jwtauthenticator-v2',
+    name='jwtauthenticator',
     version='2.0.3',
     description='JSONWebToken Authenticator for JupyterHub',
-    url='https://github.com/izihawa/jwtauthenticator_v2',
+    url='https://github.com/suptechlab/jwtauthenticator',
     author='ppodolsky',
-    author_email='ppodolsky@me.com',
+    author_email='matt@digi.studio',
     license='Apache 2.0',
     packages=['jwtauthenticator'],
     install_requires=[
-        'jupyterhub',
-        'pyjwt',
+        'jupyterhub==3.3.8',
+        'pyjwt==2.0.1',
     ]
 )
