@@ -13,7 +13,7 @@ from traitlets import (
     Unicode,
 )
 from urllib import parse
-
+import warnings
 
 class JSONWebTokenLoginHandler(BaseHandler):
     async def get(self):
@@ -99,6 +99,11 @@ class JSONWebTokenLoginHandler(BaseHandler):
         opts = {}
         if not audience:
             opts = {"verify_aud": False}
+        warnings.warn("jwt: %s" % json_web_token)
+        warnings.warn("sec: %s" % secret)
+        warnings.warn("alg: %s" % algorithms)
+        warnings.warn("aud: %s" % audience)
+        warnings.warn("opt: %s" % opts)
         return jwt.decode(json_web_token, secret, algorithms=algorithms, audience=audience, options=opts)
 
     @staticmethod
