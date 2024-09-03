@@ -68,7 +68,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
             if secret:
                 claims = self.verify_jwt_using_secret(token, secret, algorithms, audience)
             elif signing_certificate:
-                claims = self.verify_jwt_with_claims(token, signing_certificate, audience)
+                claims = self.verify_jwt_with_claims(token, signing_certificate, algorithms, audience)
             else:
                 return self.auth_failed(auth_url)
         except jwt.exceptions.InvalidTokenError:
