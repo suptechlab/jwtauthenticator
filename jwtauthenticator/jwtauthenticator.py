@@ -30,7 +30,6 @@ class JSONWebTokenLoginHandler(BaseHandler):
 
         username_claim_field = self.authenticator.username_claim_field
         extract_username = self.authenticator.extract_username
-        extract_admin = self.authenticator.extract_admin
         audience = self.authenticator.expected_audience
 
         auth_url = self.authenticator.auth_url
@@ -76,6 +75,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
 
         username = self.retrieve_username(claims, username_claim_field, extract_username=extract_username)
         admin = self.retrieve_admin_status(claims)
+        self.log.warning("usr: %s", username)
+        self.log.warning("adm: %s", admin)
         user = await self.auth_to_user({'name': username, 'admin': admin})
         self.set_login_cookie(user)
 
