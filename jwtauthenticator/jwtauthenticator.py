@@ -30,6 +30,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
 
         username_claim_field = self.authenticator.username_claim_field
         extract_username = self.authenticator.extract_username
+        extract_admin = self.authenticator.extract_admin
         audience = self.authenticator.expected_audience
 
         auth_url = self.authenticator.auth_url
@@ -74,7 +75,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
             return self.auth_failed(auth_url)
 
         username = self.retrieve_username(claims, username_claim_field, extract_username=extract_username)
-        user = await self.auth_to_user({'name': username})
+        admin = self.retrieve_admin_status(claims)
+        user = await self.auth_to_user({'name': username, 'admin': admin})
         self.set_login_cookie(user)
 
         self.redirect(_url)
@@ -113,6 +115,11 @@ class JSONWebTokenLoginHandler(BaseHandler):
             if "@" in username:
                 return username.split("@")[0]
         return username
+    
+    @staticmethod
+    def retrieve_admin_status(claims):
+        role = claims["role"] # TODO: extract to config file similar to retrieve_username
+        return (role and role == "admin")
 
 
 class JSONWebTokenAuthenticator(Authenticator):
