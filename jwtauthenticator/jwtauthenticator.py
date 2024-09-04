@@ -97,7 +97,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
     def verify_jwt_using_secret(json_web_token, secret, algorithms, audience, logger=None):
         opts = {}
         if not audience:
-            opts = {"verify_aud": False, "verify_signature": False}
+            opts = {"verify_aud": False}
+        opts['verify_signature'] = False
         #logger.warning("jwt: %s", json_web_token)
         #logger.warning("sec: %s", secret)
         #logger.warning("alg: %s", algorithms)
