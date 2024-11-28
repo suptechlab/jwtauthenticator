@@ -220,23 +220,6 @@ class JSONWebTokenAuthenticator(Authenticator):
         config=True,
         help="""Specify which algorithms you would like to permit when validating the JWT""")
 
-    username_claim_field = Unicode(
-        default_value='username',
-        config=True,
-        help="""
-        The field in the claims that contains the user name. It can be either a straight username,
-        of an email/userPrincipalName.
-        """
-    )
-
-    extract_username = Bool(
-        default_value=True,
-        config=True,
-        help="""
-        Set to true to split username_claim_field and take the part before the first `@`
-        """
-    )
-
     expected_audience = Unicode(
         default_value='',
         config=True,
