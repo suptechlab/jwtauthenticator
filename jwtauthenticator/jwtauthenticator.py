@@ -25,7 +25,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
         auth_header_content = self.request.headers.get(header_name, "") if header_name else None
         auth_cookie_content = self.get_cookie(cookie_name, "") if cookie_name else None
         auth_param_content = self.get_argument(param_name, default="") if param_name else None
-        project_param_content = self.get_argument(param_name, default="") if project_param_name else None
+        project_param_content = self.get_argument(project_param_name, default="") if project_param_name else None
 
         signing_certificate = self.authenticator.signing_certificate
         secret = self.authenticator.secret
@@ -132,7 +132,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
 
                 # For non-admins, skip the home screen and redirect the user to spawn the collaboration notebook
                 if not admin:
-                    _url=url_path_join(self.hub.server.base_url, 'hub/spawn/', project_param_content, '-collab')
+                    _url=url_path_join(self.hub.server.base_url, '/spawn/', project_param_content, '-collab')
                             
         # assign the group to the role, so it has access to the account
         # assign members of the project to the collaboration group, so they have access to the project
