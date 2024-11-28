@@ -13,6 +13,7 @@ from traitlets import (
     Unicode,
 )
 from urllib import parse
+import requests
 
 class JSONWebTokenLoginHandler(BaseHandler):
     async def get(self):
@@ -31,6 +32,9 @@ class JSONWebTokenLoginHandler(BaseHandler):
         username_claim_field = self.authenticator.username_claim_field
         extract_username = self.authenticator.extract_username
         audience = self.authenticator.expected_audience
+
+        user_api_url = self.authenticator.user_api_url
+        groups_api_url = self.authenticator.groups_api_url
 
         auth_url = self.authenticator.auth_url
         retpath_param = self.authenticator.retpath_param
@@ -73,11 +77,36 @@ class JSONWebTokenLoginHandler(BaseHandler):
         except jwt.exceptions.InvalidTokenError:
             return self.auth_failed(auth_url)
 
+        # First grab info directly from jwt
         username = self.retrieve_username(claims, username_claim_field, extract_username=extract_username)
         admin = self.retrieve_admin_status(claims)
-        self.log.warning("usr: %s", username)
-        self.log.warning("adm: %s", admin)
-        user = await self.auth_to_user({'name': username, 'admin': admin})
+        groups = []
+
+        # Call the API if one is provided
+        if (user_api_url):
+            auth_header = "Bearer %s" % token
+            headers = {"Authorization": auth_header}
+
+            # See https://api-staging.datagym.org/docs/#/Users/get_users_self
+            user_json_response = requests.get(user_api_url, headers=headers).json() 
+            username = user_json_response['uuid']
+            admin = user_json_response['role'] and user_json_response['role'] = 'admin'
+        
+        if (groups_api_url):
+            auth_header = "Bearer %s" % token
+            headers = {"Authorization": auth_header}
+
+            # See https://api-staging.datagym.org/docs/#/Projects/get_projects_my
+            groups_json_response = requests.get(groups_api_url, headers=headers).json()
+            if groups_json_response and groups_json_response['items']:
+                for group in groups_json_response['items']:
+
+                    # Allow only owners and members of groups to join the group
+                    if group['user_role'] and group['user_role'] in ['owner','member']:
+                        if group['uuid']:
+                            groups.append['uuid']
+
+        user = await self.auth_to_user({'name': username, 'admin': admin, 'groups': groups})
         self.set_login_cookie(user)
 
         self.redirect(_url)
@@ -186,6 +215,18 @@ class JSONWebTokenAuthenticator(Authenticator):
         default_value='',
         config=True,
         help="""HTTP header to inspect for the authenticated JSON Web Token."""
+    )
+
+    user_api_url = Unicode(
+        default_value='',
+        config=True,
+        help="""URL for API to get additional user details after authentication."""
+    )
+
+    groups_api_url = Unicode(
+        default_value='',
+        config=True,
+        help="""URL for API to get additional group details after authentication."""
     )
 
     def get_handlers(self, app):
