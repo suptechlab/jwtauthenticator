@@ -93,7 +93,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
             # See https://api-staging.datagym.org/docs/#/Users/get_users_self
             user_json_response = requests.get(user_api_url, headers=headers).json() 
             username = user_json_response['uuid']
-            admin = user_json_response['role'] and user_json_response['role'] == 'admin'
+            admin = 'role' in user_json_response and user_json_response['role'] == 'admin'
         
         if (project_param_content):
             auth_header = "Bearer %s" % token
