@@ -20,10 +20,12 @@ class JSONWebTokenLoginHandler(BaseHandler):
         header_name = self.authenticator.header_name
         cookie_name = self.authenticator.cookie_name
         param_name = self.authenticator.param_name
+        project_param_name = self.authenticator.project_param_name
 
         auth_header_content = self.request.headers.get(header_name, "") if header_name else None
         auth_cookie_content = self.get_cookie(cookie_name, "") if cookie_name else None
         auth_param_content = self.get_argument(param_name, default="") if param_name else None
+        project_param_content = self.get_argument(param_name, default="") if project_param_name else None
 
         signing_certificate = self.authenticator.signing_certificate
         secret = self.authenticator.secret
@@ -81,6 +83,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
         username = self.retrieve_username(claims, username_claim_field, extract_username=extract_username)
         admin = self.retrieve_admin_status(claims)
         groups = []
+        roles = []
 
         # Call the API if one is provided
         if (user_api_url):
@@ -92,7 +95,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
             username = user_json_response['uuid']
             admin = user_json_response['role'] and user_json_response['role'] == 'admin'
         
-        if (groups_api_url):
+        if (project_param_content):
             auth_header = "Bearer %s" % token
             headers = {"Authorization": auth_header}
 
@@ -103,10 +106,30 @@ class JSONWebTokenLoginHandler(BaseHandler):
 
                     # Allow only owners and members of groups to join the group
                     if group['user_role'] and group['user_role'] in ['owner','member']:
-                        if group['uuid']:
+                        if group['uuid'] and group['uuid']==project_param_content:
+                            
+                            # create a group for each collaboration
                             groups.append(group['uuid'])
+                            collab_username = f"{group['uuid']}-collab"
+                            
+                            # create a role granting access to the collaboration user’s account
+                            roles.append({
+                                "name": f"collab-access-{group['uuid']}",
+                                "scopes": [
+                                    f"access:servers!user={collab_username}",
+                                    f"admin:servers!user={collab_username}",
+                                    "admin-ui",
+                                    f"list:users!user={collab_username}",
+                                ],
+                                "groups": [group['uuid']],
+                            })
 
-        user = await self.auth_to_user({'name': username, 'admin': admin, 'groups': groups})
+                            # create a JupyterHub user for each collaboration and assign the collaboration user to the collaboration group
+                            collab_user = await self.auth_to_user({'name': collab_username, 'admin': False, 'groups': groups})
+                            
+        # assign the group to the role, so it has access to the account
+        # assign members of the project to the collaboration group, so they have access to the project
+        user = await self.auth_to_user({'name': username, 'admin': admin, 'groups': groups, 'roles': roles})
         self.set_login_cookie(user)
 
         self.redirect(_url)
@@ -175,6 +198,10 @@ class JSONWebTokenAuthenticator(Authenticator):
     param_name = Unicode(
         config=True,
         help="""The name of the query parameter used to specify the JWT token""")
+    
+    project_param_name = Unicode(
+        config=True,
+        help="""The name of the query parameter used to specify the project for a collaborative gym""")
 
     signing_certificate = Unicode(
         config=True,
