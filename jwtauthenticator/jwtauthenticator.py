@@ -30,9 +30,6 @@ class JSONWebTokenLoginHandler(BaseHandler):
         signing_certificate = self.authenticator.signing_certificate
         secret = self.authenticator.secret
         algorithms = self.authenticator.algorithms
-
-        username_claim_field = self.authenticator.username_claim_field
-        extract_username = self.authenticator.extract_username
         audience = self.authenticator.expected_audience
 
         user_api_url = self.authenticator.user_api_url
@@ -80,28 +77,32 @@ class JSONWebTokenLoginHandler(BaseHandler):
             return self.auth_failed(auth_url)
 
         # First grab info directly from jwt
-        username = self.retrieve_username(claims, username_claim_field, extract_username=extract_username)
+        username = f"{claims['name']} ({claims['user_id']})"
         admin = self.retrieve_admin_status(claims)
         groups = []
         roles = []
 
         # Call the API if one is provided
         if (user_api_url):
-            auth_header = "Bearer %s" % token
-            headers = {"Authorization": auth_header}
 
             # See https://api-staging.datagym.org/docs/#/Users/get_users_self
+            auth_header = "Bearer %s" % token
+            headers = {"Authorization": auth_header}
             user_json_response = requests.get(user_api_url, headers=headers).json() 
-            username = user_json_response['uuid']
+
+            # Parse additional user params from API
+            username = f"{user_json_response['name']} ({user_json_response['uuid']})"
             admin = 'role' in user_json_response and user_json_response['role'] == 'admin'
         
         # Access collaborative project if one is specified
         if (project_param_content):
-            auth_header = "Bearer %s" % token
-            headers = {"Authorization": auth_header}
 
             # See https://api-staging.datagym.org/docs/#/Projects/get_projects_
+            auth_header = "Bearer %s" % token
+            headers = {"Authorization": auth_header}
             projects_json_response = requests.get(groups_api_url, headers=headers).json()
+
+            # Create projects as collaborative groups
             if projects_json_response and projects_json_response['items']:
                 for project in projects_json_response['items']:
 
@@ -167,14 +168,6 @@ class JSONWebTokenLoginHandler(BaseHandler):
         #logger.warning("opt: %s", opts)
         return jwt.decode(json_web_token, secret, algorithms=algorithms, audience=audience, options=opts)
 
-    @staticmethod
-    def retrieve_username(claims, username_claim_field, extract_username):
-        username = claims[username_claim_field]
-        if extract_username:
-            if "@" in username:
-                return username.split("@")[0]
-        return username
-    
     @staticmethod
     def retrieve_admin_status(claims):
         role = claims["role"] # TODO: extract to config file similar to retrieve_username
