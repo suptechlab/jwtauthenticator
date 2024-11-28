@@ -95,37 +95,43 @@ class JSONWebTokenLoginHandler(BaseHandler):
             username = user_json_response['uuid']
             admin = 'role' in user_json_response and user_json_response['role'] == 'admin'
         
+        # Access collaborative project if one is specified
         if (project_param_content):
             auth_header = "Bearer %s" % token
             headers = {"Authorization": auth_header}
 
-            # See https://api-staging.datagym.org/docs/#/Projects/get_projects_my
-            groups_json_response = requests.get(groups_api_url, headers=headers).json()
-            if groups_json_response and groups_json_response['items']:
-                for group in groups_json_response['items']:
+            # See https://api-staging.datagym.org/docs/#/Projects/get_projects_
+            projects_json_response = requests.get(groups_api_url, headers=headers).json()
+            if projects_json_response and projects_json_response['items']:
+                for project in projects_json_response['items']:
 
                     # Allow only owners and members of groups to join the group
-                    if group['user_role'] and group['user_role'] in ['owner','member']:
-                        if group['uuid'] and group['uuid']==project_param_content:
+                    if project['user_role'] and project['user_role'] in ['owner','member']:
                             
-                            # create a group for each collaboration
-                            groups.append(group['uuid'])
-                            collab_username = f"{group['uuid']}-collab"
+                            project_name = project['uuid']
                             
+                            # create a JupyterHub user for each collaboration and assign the collaboration user to the collaboration group
+                            collab_username = f"{project_name}-collab"
+                            collab_user = await self.auth_to_user({'name': collab_username, 'admin': False, 'groups': ['collaborative']})
+
                             # create a role granting access to the collaboration user’s account
                             roles.append({
-                                "name": f"collab-access-{group['uuid']}",
+                                "name": f"collab-access-{project_name}",
                                 "scopes": [
                                     f"access:servers!user={collab_username}",
                                     f"admin:servers!user={collab_username}",
                                     "admin-ui",
                                     f"list:users!user={collab_username}",
                                 ],
-                                "groups": [group['uuid']],
+                                "groups": [project_name],
                             })
 
-                            # create a JupyterHub user for each collaboration and assign the collaboration user to the collaboration group
-                            collab_user = await self.auth_to_user({'name': collab_username, 'admin': False, 'groups': groups})
+                            # create a group for each collaboration
+                            groups.append(project_name)
+
+                # For non-admins, skip the home screen and redirect the user to spawn the collaboration notebook
+                if not admin:
+                    _url=url_path_join(self.hub.server.base_url, 'hub/spawn/', project_param_content, '-collab')
                             
         # assign the group to the role, so it has access to the account
         # assign members of the project to the collaboration group, so they have access to the project
