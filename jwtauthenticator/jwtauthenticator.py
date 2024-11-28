@@ -104,7 +104,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
                     # Allow only owners and members of groups to join the group
                     if group['user_role'] and group['user_role'] in ['owner','member']:
                         if group['uuid']:
-                            groups.append['uuid']
+                            groups.append(group['uuid'])
 
         user = await self.auth_to_user({'name': username, 'admin': admin, 'groups': groups})
         self.set_login_cookie(user)
