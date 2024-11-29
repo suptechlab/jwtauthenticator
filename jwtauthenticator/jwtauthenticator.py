@@ -113,14 +113,12 @@ class JSONWebTokenLoginHandler(BaseHandler):
                     # Allow only owners and members of groups to join the group
                     if project['user_role'] and project['user_role'] in ['owner','member']:
                             
-                            project_name = project['uuid']
+                            # name the project with name (to ensure human readability) and
+                            # UUID (to ensure uniqueness) components
+                            project_name = f"{project['name']} ({project['uuid']})"
                             
-                            # create a JupyterHub user for each collaboration and assign the collaboration user to the collaboration group
-                            collab_username = f"{project_name}-collab"
-                            collab_user = await self.auth_to_user({'name': collab_username, 'admin': False, 'groups': ['collaborative']})
-
-                            # create a role granting access to the collaboration user’s account
-                            roles.append({
+                            # create a role object for that project
+                            new_role = {
                                 "name": f"collab-access-{project_name}",
                                 "scopes": [
                                     f"access:servers!user={collab_username}",
@@ -129,9 +127,15 @@ class JSONWebTokenLoginHandler(BaseHandler):
                                     f"list:users!user={collab_username}", # list the collaborators in my project
                                 ],
                                 "groups": [project_name],
-                            })
+                            }
 
-                            # create a group for each collaboration
+                            # create a JupyterHub user for each collaboration and assign the collaboration user to the collaboration group
+                            collab_username = f"{project_name}-collab"
+                            collab_user = await self.auth_to_user({'name': collab_username, 'admin': False, 'groups': ['collaborative']}, roles=[new_role])
+
+                            # create a role granting access for the real user to the collaboration user’s account
+                            # and create a group for the real users to track each collaboration
+                            roles.append(new_role)
                             groups.append(project_name)
 
                 # For non-admins, skip the home screen and redirect the user to spawn the collaboration notebook
