@@ -133,6 +133,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
                             new_role = {
                                 "name": f"collab-access-{project_uuid}",
                                 "scopes": [
+                                    "self",
                                     f"access:servers!user={collab_username}",
                                     f"admin:servers!user={collab_username}",
                                     "admin-ui", # provide access to the admin UI just for projects I have access to
