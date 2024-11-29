@@ -126,11 +126,10 @@ class JSONWebTokenLoginHandler(BaseHandler):
                             project_name = re.sub(r'[^a-z0-9-]', '', project_name)
                             collab_username = f"{project_name}-collab"
 
-                            # store the name if it's the project being currently requested
-                            if project_uuid == project_param_content:
-                                spawn_redirect_username = collab_username
+                            # create a JupyterHub user for each collaboration and assign the collaboration user to the collaborative group to track it
+                            collab_user = await self.auth_to_user({'name': collab_username, 'admin': False, 'groups': ['collaborative']})
                             
-                            # create a role object for that project
+                            # set up a role granting access for the real user to the collaboration user’s account
                             new_role = {
                                 "name": f"collab-access-{project_uuid}",
                                 "scopes": [
@@ -142,13 +141,13 @@ class JSONWebTokenLoginHandler(BaseHandler):
                                 "groups": [project_name],
                             }
 
-                            # create a JupyterHub user for each collaboration and assign the collaboration user to the collaboration group
-                            collab_user = await self.auth_to_user({'name': collab_username, 'admin': False, 'groups': ['collaborative'], 'roles': [new_role]})
-
-                            # create a role granting access for the real user to the collaboration user’s account
-                            # and create a group for the real users to track each collaboration
+                            # add to the roles and groups that will be given to the user
                             roles.append(new_role)
                             groups.append(project_name)
+
+                            # store the name if it's the project corresponding to the project specified by a uuid in the auth param
+                            if project_uuid == project_param_content:
+                                spawn_redirect_username = collab_username
 
                 # For non-admins, skip the home screen and redirect the user to spawn the collaboration notebook
                 if not admin and spawn_redirect_username:
