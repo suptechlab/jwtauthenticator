@@ -113,9 +113,10 @@ class JSONWebTokenLoginHandler(BaseHandler):
                     # Allow only owners and members of groups to join the group
                     if project['user_role'] and project['user_role'] in ['owner','member']:
                             
-                            # name the project with name (to ensure human readability) and
-                            # UUID (to ensure uniqueness) components
+                            # name the project with name (to ensure human readability) and UUID (to ensure uniqueness) components
+                            # name a pseudo-user with the project name with a suffix to indicate it is a "collaboration" user
                             project_name = f"{project['name']} ({project['uuid']})"
+                            collab_username = f"{project_name}-collab"
                             
                             # create a role object for that project
                             new_role = {
@@ -130,7 +131,6 @@ class JSONWebTokenLoginHandler(BaseHandler):
                             }
 
                             # create a JupyterHub user for each collaboration and assign the collaboration user to the collaboration group
-                            collab_username = f"{project_name}-collab"
                             collab_user = await self.auth_to_user({'name': collab_username, 'admin': False, 'groups': ['collaborative']}, roles=[new_role])
 
                             # create a role granting access for the real user to the collaboration user’s account
