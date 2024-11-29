@@ -14,6 +14,7 @@ from traitlets import (
 )
 from urllib import parse
 import requests
+import re
 
 class JSONWebTokenLoginHandler(BaseHandler):
     async def get(self):
@@ -95,7 +96,9 @@ class JSONWebTokenLoginHandler(BaseHandler):
                 raise web.HTTPError(400)
 
             # Parse additional user params from API
-            username = f"{user_json_response['name']} ({user_json_response['uuid']})"
+            username = f"{user_json_response['name']} ({user_json_response['uuid']})".lower().replace(' ', '-')
+            username = re.sub(r'[^a-z0-9-]', '', username)
+
             admin = 'role' in user_json_response and user_json_response['role'] == 'admin'
         
         # Access collaborative project if one is specified
@@ -119,7 +122,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
                             # name the project with name (to ensure human readability) and UUID (to ensure uniqueness) components
                             # name a pseudo-user with the project name with a suffix to indicate it is a "collaboration" user
                             project_uuid = project['uuid']
-                            project_name = f"{project['name']} ({project_uuid})"
+                            project_name = f"{project['name']} ({project_uuid})".lower().replace(' ', '-')
+                            project_name = re.sub(r'[^a-z0-9-]', '', project_name)
                             collab_username = f"{project_name}-collab"
 
                             # store the name if it's the project being currently requested
