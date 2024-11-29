@@ -90,6 +90,10 @@ class JSONWebTokenLoginHandler(BaseHandler):
             headers = {"Authorization": auth_header}
             user_json_response = requests.get(user_api_url, headers=headers).json() 
 
+            # Check that the response is successful
+            if 'uuid' not in user_json_response:
+                raise web.HTTPError(400)
+
             # Parse additional user params from API
             username = f"{user_json_response['name']} ({user_json_response['uuid']})"
             admin = 'role' in user_json_response and user_json_response['role'] == 'admin'
