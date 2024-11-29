@@ -131,7 +131,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
                             }
 
                             # create a JupyterHub user for each collaboration and assign the collaboration user to the collaboration group
-                            collab_user = await self.auth_to_user({'name': collab_username, 'admin': False, 'groups': ['collaborative']}, roles=[new_role])
+                            collab_user = await self.auth_to_user({'name': collab_username, 'admin': False, 'groups': ['collaborative']}, 'roles': [new_role])
 
                             # create a role granting access for the real user to the collaboration user’s account
                             # and create a group for the real users to track each collaboration
