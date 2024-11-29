@@ -125,8 +125,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
                                 "scopes": [
                                     f"access:servers!user={collab_username}",
                                     f"admin:servers!user={collab_username}",
-                                    "admin-ui",
-                                    f"list:users!user={collab_username}",
+                                    #"admin-ui", # provide access to the admin UI just for projects I have access to
+                                    #f"list:users!user={collab_username}", # list the collaborators in my project
                                 ],
                                 "groups": [project_name],
                             })
