@@ -115,12 +115,13 @@ class JSONWebTokenLoginHandler(BaseHandler):
                             
                             # name the project with name (to ensure human readability) and UUID (to ensure uniqueness) components
                             # name a pseudo-user with the project name with a suffix to indicate it is a "collaboration" user
-                            project_name = f"{project['name']} ({project['uuid']})"
+                            project_uuid = project['uuid']
+                            project_name = f"{project['name']} ({project_uuid})"
                             collab_username = f"{project_name}-collab"
                             
                             # create a role object for that project
                             new_role = {
-                                "name": f"collab-access-{project_name}",
+                                "name": f"collab-access-{project_uuid}",
                                 "scopes": [
                                     f"access:servers!user={collab_username}",
                                     f"admin:servers!user={collab_username}",
