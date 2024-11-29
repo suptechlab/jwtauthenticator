@@ -108,6 +108,9 @@ class JSONWebTokenLoginHandler(BaseHandler):
 
             # Create projects as collaborative groups
             if projects_json_response and projects_json_response['items']:
+
+                spawn_redirect_username = ""
+
                 for project in projects_json_response['items']:
 
                     # Allow only owners and members of groups to join the group
@@ -118,6 +121,10 @@ class JSONWebTokenLoginHandler(BaseHandler):
                             project_uuid = project['uuid']
                             project_name = f"{project['name']} ({project_uuid})"
                             collab_username = f"{project_name}-collab"
+
+                            # store the name if it's the project being currently requested
+                            if project_uuid == project_param_content:
+                                spawn_redirect_username = collab_username
                             
                             # create a role object for that project
                             new_role = {
@@ -140,8 +147,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
                             groups.append(project_name)
 
                 # For non-admins, skip the home screen and redirect the user to spawn the collaboration notebook
-                if not admin:
-                    _url=url_path_join(self.hub.server.base_url, 'spawn', f"{project_param_content}-collab")
+                if not admin and spawn_redirect_username:
+                    _url=url_path_join(self.hub.server.base_url, 'spawn', spawn_redirect_username)
                             
         # assign the group to the role, so it has access to the account
         # assign members of the project to the collaboration group, so they have access to the project
