@@ -136,7 +136,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
 
                 # For non-admins, skip the home screen and redirect the user to spawn the collaboration notebook
                 if not admin:
-                    _url=url_path_join(self.hub.server.base_url, '/spawn/', project_param_content, '-collab')
+                    _url=url_path_join(self.hub.server.base_url, 'spawn', f"{project_param_content}-collab")
                             
         # assign the group to the role, so it has access to the account
         # assign members of the project to the collaboration group, so they have access to the project
