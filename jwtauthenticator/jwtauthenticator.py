@@ -23,6 +23,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
         param_name = self.authenticator.param_name
         project_param_name = self.authenticator.project_param_name
 
+        enable_rtc = self.authenticator.enable_rtc
+
         auth_header_content = self.request.headers.get(header_name, "") if header_name else None
         auth_cookie_content = self.get_cookie(cookie_name, "") if cookie_name else None
         auth_param_content = self.get_argument(param_name, default="") if param_name else None
@@ -101,8 +103,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
 
             admin = 'role' in user_json_response and user_json_response['role'] == 'admin'
         
-        # Access collaborative project if one is specified
-        if (project_param_content):
+        # Access collaborative project if one is specified or if there is only one
+        if (enable_rtc):
 
             # See https://api-staging.datagym.org/docs/#/Projects/get_projects_
             auth_header = "Bearer %s" % token
@@ -118,6 +120,18 @@ class JSONWebTokenLoginHandler(BaseHandler):
 
                     # Allow only owners and members of groups to join the group
                     if project['user_role'] and project['user_role'] in ['owner','member']:
+                            
+                            # "HACKATHON" fix
+                            # if no project_uuid is passed in with the request, and there is only one 
+                            # project that the user is a member or owner of, 
+                            # automatically use that project to redirect to
+                            # TODO: check project flag to ensure it's a collab project
+                            # TODO: check users/self to ensure they have a redirect directive
+                            if not project_param_content:
+                                if 'uuid' in project and len(projects_json_response['items']) == 1:
+                                    project_param_content = project['uuid']
+                                else:
+                                    raise web.HTTPError(400, "Please specify a collaborative project identifier")
                             
                             # name the project with name (to ensure human readability) and UUID (to ensure uniqueness) components
                             # name a pseudo-user with the project name with a suffix to indicate it is a "collaboration" user
@@ -256,6 +270,12 @@ class JSONWebTokenAuthenticator(Authenticator):
         default_value='',
         config=True,
         help="""URL for API to get additional group details after authentication."""
+    )
+
+    enable_rtc = Unicode(
+        default_value=False,
+        config=True,
+        help="""Flag to determine whether to enable real time collaboration logic."""
     )
 
     def get_handlers(self, app):
