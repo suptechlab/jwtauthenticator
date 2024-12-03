@@ -272,7 +272,7 @@ class JSONWebTokenAuthenticator(Authenticator):
         help="""URL for API to get additional group details after authentication."""
     )
 
-    enable_rtc = Unicode(
+    enable_rtc = Bool(
         default_value=False,
         config=True,
         help="""Flag to determine whether to enable real time collaboration logic."""
