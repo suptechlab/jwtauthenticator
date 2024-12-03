@@ -122,13 +122,13 @@ class JSONWebTokenLoginHandler(BaseHandler):
                     if project['user_role'] and project['user_role'] in ['owner','member']:
                             
                             # "HACKATHON" fix
-                            # if no project_uuid is passed in with the request, and there is only one 
-                            # project that the user is a member or owner of, 
-                            # automatically use that project to redirect to
-                            # TODO: check project flag to ensure it's a collab project
-                            # TODO: check users/self to ensure they have a redirect directive
+                            # if no project_uuid is passed in with the request, and
+                            # they have a redirection flag set with "rtc" in the flag, 
+                            # automatically use the first project to redirect to
+                            # TODO: check project flag to ensure it's a collab-enabled project
                             if not project_param_content:
-                                if 'uuid' in project and len(projects_json_response['items']) == 1:
+                                redirect_without_project_id = ('redirect_hub_subdomain' in user_json_response) and user_json_response['redirect_hub_subdomain'] and ("rtc" in user_json_response['redirect_hub_subdomain'])
+                                if redirect_without_project_id and 'uuid' in project:
                                     project_param_content = project['uuid']
                                 else:
                                     raise web.HTTPError(400, "Please specify a collaborative project identifier")
