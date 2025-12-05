@@ -36,7 +36,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
         audience = self.authenticator.expected_audience
         jwt_param_id = self.authenticator.jwt_param_id
         jwt_param_name = self.authenticator.jwt_param_name
-        user_admin_indicator = self.authenticator.user_api_param_role_val
+        user_admin_indicator = self.authenticator.user_admin_indicator
 
         user_api_url = self.authenticator.user_api_url
         user_api_param_id = self.authenticator.user_api_param_id
