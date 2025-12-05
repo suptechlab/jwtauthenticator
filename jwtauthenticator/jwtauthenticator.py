@@ -36,6 +36,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
         audience = self.authenticator.expected_audience
         jwt_param_id = self.authenticator.jwt_param_id
         jwt_param_name = self.authenticator.jwt_param_name
+        jwt_param_role = self.authenticator.jwt_param_role
         user_admin_indicator = self.authenticator.user_admin_indicator
 
         user_api_url = self.authenticator.user_api_url
@@ -92,7 +93,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
 
         # First grab info directly from jwt
         username = f"{claims[jwt_param_name]} ({claims[jwt_param_id]})"
-        admin = self.retrieve_admin_status(claims, user_admin_indicator, user_api_param_role)
+        admin = self.retrieve_admin_status(claims, jwt_param_role, user_admin_indicator)
         groups = []
         roles = []
 
@@ -294,6 +295,12 @@ class JSONWebTokenAuthenticator(Authenticator):
         default_value='name',
         config=True,
         help="""Key from jwt payload that indicates the user name."""
+    )
+
+    jwt_param_role = Unicode(
+        default_value='role',
+        config=True,
+        help="""Key from jwt payload that indicates the user role."""
     )
 
     user_api_url = Unicode(
