@@ -228,7 +228,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
 
     @staticmethod
     def retrieve_admin_status(claims, user_admin_indicator_key, user_admin_indicator_value):
-        role = claims[user_admin_indicator]
+        role = claims[user_admin_indicator_key]
         return (role and role == user_admin_indicator_value)
 
 
