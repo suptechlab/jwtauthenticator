@@ -106,7 +106,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
             headers = {"Authorization": auth_header}
             user_json_response = requests.get(user_api_url, headers=headers).json() 
 
-            self.log.warning("res: %s", user_json_response)
+            # self.log.warning("res: %s", user_json_response)
 
             # Check that the response is successful
             if user_api_param_id not in user_json_response:
@@ -134,10 +134,14 @@ class JSONWebTokenLoginHandler(BaseHandler):
             headers = {"Authorization": auth_header}
             projects_json_response = requests.get(groups_api_url, headers=headers).json()
 
+            self.log.warning("pres: %s", user_json_response)
+
             projects_array = projects_json_response
             if groups_api_params_projects_key:
                 projects_json_response[groups_api_params_projects_key]
 
+            self.log.warning("parr: %s", projects_array)
+            
             # Create projects as collaborative groups
             if projects_array:
 
@@ -160,6 +164,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
                                 else:
                                     raise web.HTTPError(400, "Please specify a collaborative project identifier")
                             
+                            self.log.warning("proj: %s", project)
+
                             # name the project with name (to ensure human readability) and UUID (to ensure uniqueness) components
                             # name a pseudo-user with the project name with a suffix to indicate it is a "collaboration" user
                             project_uuid = project[groups_api_param_id]
