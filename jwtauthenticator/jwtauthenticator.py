@@ -34,9 +34,20 @@ class JSONWebTokenLoginHandler(BaseHandler):
         secret = self.authenticator.secret
         algorithms = self.authenticator.algorithms
         audience = self.authenticator.expected_audience
+        jwt_param_id = self.authenticator.jwt_param_id
+        jwt_param_name = self.authenticator.jwt_param_name
+        user_admin_indicator = self.authenticator.user_api_param_role_val
 
         user_api_url = self.authenticator.user_api_url
+        user_api_param_id = self.authenticator.user_api_param_id
+        user_api_param_name = self.authenticator.user_api_param_name
+        user_api_param_role = self.authenticator.user_api_param_role
+        
         groups_api_url = self.authenticator.groups_api_url
+        groups_api_params_projects_key = self.authenticator.groups_api_params_projects_key
+        groups_api_already_checks_membership = self.authenticator.groups_api_already_checks_membership
+        groups_api_param_id = self.authenticator.groups_api_param_id
+        groups_api_param_name = self.authenticator.groups_api_param_name
 
         auth_url = self.authenticator.auth_url
         retpath_param = self.authenticator.retpath_param
@@ -80,8 +91,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
             return self.auth_failed(auth_url)
 
         # First grab info directly from jwt
-        username = f"{claims['name']} ({claims['user_id']})"
-        admin = self.retrieve_admin_status(claims)
+        username = f"{claims[jwt_param_name]} ({claims[jwt_param_id]})"
+        admin = self.retrieve_admin_status(claims, user_admin_indicator, user_api_param_role)
         groups = []
         roles = []
 
@@ -89,37 +100,50 @@ class JSONWebTokenLoginHandler(BaseHandler):
         if (user_api_url):
 
             # See https://api-staging.datagym.org/docs/#/Users/get_users_self
+            # See https://staging-api.govspace.io/docs#/Users/UsersController_getSelf
             auth_header = "Bearer %s" % token
             headers = {"Authorization": auth_header}
             user_json_response = requests.get(user_api_url, headers=headers).json() 
 
             # Check that the response is successful
-            if 'uuid' not in user_json_response:
+            if user_api_param_id not in user_json_response:
                 raise web.HTTPError(400)
 
             # Parse additional user params from API
-            username = f"{user_json_response['name']} ({user_json_response['uuid']})".lower().replace(' ', '-')
+            username = f"{user_json_response[user_api_param_name]} ({user_json_response[user_api_param_name]})".lower().replace(' ', '-')
             username = re.sub(r'[^a-z0-9-]', '', username)
 
-            admin = 'role' in user_json_response and user_json_response['role'] == 'admin'
+            # Check admin status in jwt
+            def get_nested(d, path):
+                for key in path.split('.'):
+                    d = d.get(key) if isinstance(d, dict) else None
+                    if d is None:
+                        break
+                return d
+            admin = get_nested(user_json_response, user_api_param_role) == user_admin_indicator
         
         # Access collaborative project if one is specified or if there is only one
         if (enable_rtc):
 
             # See https://api-staging.datagym.org/docs/#/Projects/get_projects_
+            # See https://staging-api.govspace.io/docs#/Spaces/SpacesController_findAllMembershipsForCurrentUser
             auth_header = "Bearer %s" % token
             headers = {"Authorization": auth_header}
             projects_json_response = requests.get(groups_api_url, headers=headers).json()
 
+            projects_array = projects_json_response
+            if groups_api_params_projects_key:
+                projects_json_response[groups_api_params_projects_key]
+
             # Create projects as collaborative groups
-            if projects_json_response and projects_json_response['items']:
+            if projects_array:
 
                 spawn_redirect_username = ""
 
-                for project in projects_json_response['items']:
+                for project in projects_array:
 
                     # Allow only owners and members of groups to join the group
-                    if project['user_role'] and project['user_role'] in ['owner','member']:
+                    if groups_api_already_checks_membership or (project['user_role'] and project['user_role'] in ['owner','member']):
                             
                             # "HACKATHON" fix
                             # if no project_uuid is passed in with the request, and
@@ -135,8 +159,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
                             
                             # name the project with name (to ensure human readability) and UUID (to ensure uniqueness) components
                             # name a pseudo-user with the project name with a suffix to indicate it is a "collaboration" user
-                            project_uuid = project['uuid']
-                            project_name = f"{project['name']} ({project_uuid})".lower().replace(' ', '-')
+                            project_uuid = project[groups_api_param_id]
+                            project_name = f"{project[groups_api_param_name]} ({project_uuid})".lower().replace(' ', '-')
                             project_name = re.sub(r'[^a-z0-9-]', '', project_name)
                             collab_username = f"{project_name}-collab"
 
@@ -195,17 +219,17 @@ class JSONWebTokenLoginHandler(BaseHandler):
         if not audience:
             opts = {"verify_aud": False}
         opts['verify_signature'] = False
-        #logger.warning("jwt: %s", json_web_token)
-        #logger.warning("sec: %s", secret)
-        #logger.warning("alg: %s", algorithms)
-        #logger.warning("aud: %s", audience)
-        #logger.warning("opt: %s", opts)
+        logger.warning("jwt: %s", json_web_token)
+        logger.warning("sec: %s", secret)
+        logger.warning("alg: %s", algorithms)
+        logger.warning("aud: %s", audience)
+        logger.warning("opt: %s", opts)
         return jwt.decode(json_web_token, secret, algorithms=algorithms, audience=audience, options=opts)
 
     @staticmethod
-    def retrieve_admin_status(claims):
-        role = claims["role"] # TODO: extract to config file similar to retrieve_username
-        return (role and role == "admin")
+    def retrieve_admin_status(claims, user_admin_indicator_key, user_admin_indicator_value):
+        role = claims[user_admin_indicator]
+        return (role and role == user_admin_indicator_value)
 
 
 class JSONWebTokenAuthenticator(Authenticator):
@@ -260,16 +284,76 @@ class JSONWebTokenAuthenticator(Authenticator):
         help="""HTTP header to inspect for the authenticated JSON Web Token."""
     )
 
+    jwt_param_id = Unicode(
+        default_value='user_id',
+        config=True,
+        help="""Key from jwt payload that indicates the user id."""
+    )
+
+    jwt_param_name = Unicode(
+        default_value='name',
+        config=True,
+        help="""Key from jwt payload that indicates the user name."""
+    )
+
     user_api_url = Unicode(
         default_value='',
         config=True,
         help="""URL for API to get additional user details after authentication."""
     )
 
+    user_api_param_id = Unicode(
+        default_value='uuid',
+        config=True,
+        help="""Key for unique identifier returned by the user_api_url after authentication."""
+    )
+
+    user_api_param_name = Unicode(
+        default_value='name',
+        config=True,
+        help="""Key for user's name returned by the user_api_url after authentication."""
+    )
+
+    user_api_param_role = Unicode(
+        default_value='role',
+        config=True,
+        help="""Key for user's role (e.g., admin) returned by the user_api_url after authentication."""
+    )
+
+    user_admin_indicator = Unicode(
+        default_value='admin',
+        config=True,
+        help="""Value of user's role that indicates admin, in both the jwt payload and the user_api_url response after authentication."""
+    )
+
     groups_api_url = Unicode(
         default_value='',
         config=True,
         help="""URL for API to get additional group details after authentication."""
+    )
+
+    groups_api_params_projects_key = Unicode(
+        default_value='items',
+        config=True,
+        help="""Key for groups_api_url response that points to the array of projects."""
+    )
+
+    groups_api_already_checks_membership = Bool(
+        default_value=False,
+        config=True,
+        help="""Flag to indicate whether the groups API only includes projects available to the user."""
+    )
+
+    groups_api_param_id = Unicode(
+        default_value='uuid',
+        config=True,
+        help="""Key for unique identifier returned by the groups_api_url."""
+    )
+
+    groups_api_param_name = Unicode(
+        default_value='name',
+        config=True,
+        help="""Key for project name returned by the groups_api_url."""
     )
 
     enable_rtc = Bool(
