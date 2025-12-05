@@ -106,6 +106,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
             headers = {"Authorization": auth_header}
             user_json_response = requests.get(user_api_url, headers=headers).json() 
 
+            self.log.warning("res: %s", user_json_response)
+
             # Check that the response is successful
             if user_api_param_id not in user_json_response:
                 raise web.HTTPError(400)
@@ -220,11 +222,11 @@ class JSONWebTokenLoginHandler(BaseHandler):
         if not audience:
             opts = {"verify_aud": False}
         opts['verify_signature'] = False
-        logger.warning("jwt: %s", json_web_token)
-        logger.warning("sec: %s", secret)
-        logger.warning("alg: %s", algorithms)
-        logger.warning("aud: %s", audience)
-        logger.warning("opt: %s", opts)
+        # logger.warning("jwt: %s", json_web_token)
+        # logger.warning("sec: %s", secret)
+        # logger.warning("alg: %s", algorithms)
+        # logger.warning("aud: %s", audience)
+        # logger.warning("opt: %s", opts)
         return jwt.decode(json_web_token, secret, algorithms=algorithms, audience=audience, options=opts)
 
     @staticmethod
