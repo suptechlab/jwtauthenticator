@@ -148,8 +148,9 @@ class JSONWebTokenLoginHandler(BaseHandler):
                 spawn_redirect_username = ""
 
                 for project in projects_array:
-
-                    # Allow only owners and members of groups to join the group
+ 
+                    # Allow only owners, members of groups, and admins to join the group
+                    # Note that some APIs (e.g., GovSpace) only return projects where the user has these roles
                     if groups_api_already_checks_membership or (project['user_role'] and project['user_role'] in ['owner','member']):
                             
                             # "HACKATHON" fix
