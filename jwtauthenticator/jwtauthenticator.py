@@ -184,7 +184,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
                                     "self",
                                     f"access:servers!user={collab_username}",
                                     f"admin:servers!user={collab_username}",
-                                    "admin-ui", # provide access to the admin UI just for projects I have access to
+                                    "read:users", # provide access to the admin UI just for projects I have access to
                                     f"list:users!user={collab_username}", # list the collaborators in my project
                                 ],
                                 "groups": [project_name],
@@ -204,7 +204,28 @@ class JSONWebTokenLoginHandler(BaseHandler):
                             
         # assign the group to the role, so it has access to the account
         # assign members of the project to the collaboration group, so they have access to the project
-        user = await self.auth_to_user({'name': username, 'admin': admin, 'groups': groups, 'roles': roles})
+        base_scopes = [
+            "access:servers",
+            "read:users:me",
+        ]
+
+        admin_scopes = [
+            "admin-ui",
+            "admin:read",
+            "admin:users",
+            "admin:servers",
+        ]
+
+        scopes = base_scopes + (admin_scopes if admin else [])
+
+        user = await self.auth_to_user({
+            'name': username,
+            'admin': admin,
+            'groups': groups,
+            'roles': roles,
+            'scopes': scopes,
+        })
+        
         self.set_login_cookie(user)
 
         self.redirect(_url)
