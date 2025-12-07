@@ -134,7 +134,12 @@ class JSONWebTokenLoginHandler(BaseHandler):
             
             # Check for admin and add to roles accordingly
             admin = get_nested(user_json_response, user_api_param_role) == user_admin_indicator
-
+            if admin:
+                roles.append({
+                    "name": f"admin-{username}",
+                    "scopes": base_scopes + admin_scopes,
+                })
+                
         # Access collaborative project if one is specified or if there is only one
         if (enable_rtc):
 
@@ -219,13 +224,6 @@ class JSONWebTokenLoginHandler(BaseHandler):
             roles.append({
                 "name": f"user-{username}",
                 "scopes": base_scopes,
-            })
-
-        # Note this has to be set down here because username differs between rtc and not
-        if admin:
-            roles.append({
-                "name": f"admin-{username}",
-                "scopes": base_scopes + admin_scopes,
             })
             
 
