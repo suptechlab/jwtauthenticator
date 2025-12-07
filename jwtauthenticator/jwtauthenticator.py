@@ -220,7 +220,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
         ]
 
         scopes = base_scopes + (admin_scopes if admin else [])
-
+        print("Computed scopes:", scopes)
+        
         user = await self.auth_to_user({
             'name': username,
             'admin': admin,
@@ -233,7 +234,6 @@ class JSONWebTokenLoginHandler(BaseHandler):
         print("Admin:", user.admin)
         print("Groups:", user.groups)
         print("Roles:", user.roles)
-        print("Scopes:", user.scopes)
 
         self.set_login_cookie(user)
 
