@@ -53,7 +53,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
         auth_url = self.authenticator.auth_url
         retpath_param = self.authenticator.retpath_param
         
-        base_scopes = ["servers", "read:users:me"]
+        base_scopes = ["self"]
         admin_scopes = [
             "admin-ui",
             "admin:read",
