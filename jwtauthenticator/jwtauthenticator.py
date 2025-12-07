@@ -61,6 +61,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
             "access:servers!user=*",
             "admin:servers",
             "admin:groups",
+            "read:servers!user=*",
+            "servers!user=*", 
         ]
 
         _url = url_path_join(self.hub.server.base_url, 'home')
