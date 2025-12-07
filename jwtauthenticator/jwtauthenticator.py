@@ -58,11 +58,13 @@ class JSONWebTokenLoginHandler(BaseHandler):
             "self",
             "admin-ui",
             "admin:users",
-            "access:servers!user=*",
             "admin:servers",
             "admin:groups",
-            "read:servers!user=*",
-            "servers!user=*", 
+            # Broad server access scopes:
+            "access:servers",      
+            "servers",              
+            "read:servers",        
+            "read:users",
         ]
 
         _url = url_path_join(self.hub.server.base_url, 'home')
