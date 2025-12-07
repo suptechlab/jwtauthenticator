@@ -134,19 +134,12 @@ class JSONWebTokenLoginHandler(BaseHandler):
             
             # Check for admin and add to roles accordingly
             admin = get_nested(user_json_response, user_api_param_role) == user_admin_indicator
-            if admin:
-                roles.append({
-                    "name": f"admin-{username}",
-                    "scopes": base_scopes + admin_scopes,  # you can include base_scopes here too
-                })
-            else:
-                roles.append({
-                    "name": f"user-{username}",
-                    "scopes": base_scopes,
-                })
 
         # Access collaborative project if one is specified or if there is only one
         if (enable_rtc):
+
+            # Update username for groups
+            username = f"{claims[jwt_param_name]} ({claims[jwt_param_id]})"
 
             # See https://api-staging.datagym.org/docs/#/Projects/get_projects_
             # See https://staging-api.govspace.io/docs#/Spaces/SpacesController_findAllMembershipsForCurrentUser
@@ -221,7 +214,21 @@ class JSONWebTokenLoginHandler(BaseHandler):
                 # For non-admins, skip the home screen and redirect the user to spawn the collaboration notebook
                 if not admin and spawn_redirect_username:
                     _url=url_path_join(self.hub.server.base_url, 'spawn', spawn_redirect_username)
-                            
+        else:
+            # Set scope for non-rtc individual users
+            roles.append({
+                "name": f"user-{username}",
+                "scopes": base_scopes,
+            })
+
+        # Note this has to be set down here because username differs between rtc and not
+        if admin:
+            roles.append({
+                "name": f"admin-{username}",
+                "scopes": base_scopes + admin_scopes,
+            })
+            
+
         user = await self.auth_to_user({
             'name': username,
             'admin': admin,
