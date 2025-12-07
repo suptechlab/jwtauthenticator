@@ -226,7 +226,11 @@ class JSONWebTokenLoginHandler(BaseHandler):
             'scopes': scopes,
         })
         
-        self.log.warning("User object: %s", user)
+        print("Name:", user.name)
+        print("Admin:", user.admin)
+        print("Groups:", user.groups)
+        print("Roles:", user.roles)
+        print("Scopes:", user.scopes)
 
         self.set_login_cookie(user)
 
