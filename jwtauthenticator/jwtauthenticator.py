@@ -56,7 +56,6 @@ class JSONWebTokenLoginHandler(BaseHandler):
         base_scopes = ["self"]
         admin_scopes = [
             "admin-ui",
-            "admin:read",
             "admin:users",
             "admin:servers",
             "admin:groups",
