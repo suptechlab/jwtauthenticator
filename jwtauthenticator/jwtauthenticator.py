@@ -57,6 +57,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
         admin_scopes = [
             "admin-ui",
             "admin:users",
+            "access:servers!user=*",
             "admin:servers",
             "admin:groups",
         ]
@@ -139,7 +140,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
                     "name": f"admin-{username}",
                     "scopes": base_scopes + admin_scopes,
                 })
-                
+
         # Access collaborative project if one is specified or if there is only one
         if (enable_rtc):
 
