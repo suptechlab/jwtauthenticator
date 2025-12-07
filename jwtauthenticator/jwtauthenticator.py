@@ -113,7 +113,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
                 raise web.HTTPError(400)
 
             # Parse additional user params from API
-            username = f"{user_json_response[user_api_param_name]} ({user_json_response[user_api_param_name]})".lower().replace(' ', '-')
+            username = user_json_response[user_api_param_id].lower().replace(' ', '-')
             username = re.sub(r'[^a-z0-9-]', '', username)
 
             # Check admin status in jwt
