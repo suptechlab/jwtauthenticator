@@ -205,15 +205,18 @@ class JSONWebTokenLoginHandler(BaseHandler):
         # assign the group to the role, so it has access to the account
         # assign members of the project to the collaboration group, so they have access to the project
         base_scopes = [
-            "access:servers",
+            "servers",
             "read:users:me",
         ]
 
         admin_scopes = [
-            "admin-ui",
-            "admin:read",
-            "admin:users",
-            "admin:servers",
+            "admin:users",        # manage users
+            "admin:servers",      # manage user servers
+            "admin:groups",       # manage groups
+            "admin:roles",        # manage roles
+            "admin:ui",           # access admin UI
+            "servers",            # access own server (redundant but safe)
+            "read:users:me",      # read own info
         ]
 
         scopes = base_scopes + (admin_scopes if admin else [])
