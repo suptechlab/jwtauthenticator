@@ -226,6 +226,8 @@ class JSONWebTokenLoginHandler(BaseHandler):
             'scopes': scopes,
         })
         
+        self.log.warning("User object: %s", user)
+
         self.set_login_cookie(user)
 
         self.redirect(_url)
