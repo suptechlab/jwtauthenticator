@@ -52,6 +52,16 @@ class JSONWebTokenLoginHandler(BaseHandler):
 
         auth_url = self.authenticator.auth_url
         retpath_param = self.authenticator.retpath_param
+        
+        base_scopes = ["servers", "read:users:me"]
+        admin_scopes = [
+            "admin-ui",
+            "admin:read",
+            "admin:users",
+            "admin:servers",
+            "admin:groups",
+            "admin:roles",
+        ]
 
         _url = url_path_join(self.hub.server.base_url, 'home')
         next_url = self.get_argument('next', default=False)
@@ -92,7 +102,7 @@ class JSONWebTokenLoginHandler(BaseHandler):
             return self.auth_failed(auth_url)
 
         # First grab info directly from jwt
-        username = f"{claims[jwt_param_name]} ({claims[jwt_param_id]})"
+        username = claims[jwt_param_id].lower().replace(' ', '-')
         admin = self.retrieve_admin_status(claims, jwt_param_role, user_admin_indicator)
         groups = []
         roles = []
@@ -123,8 +133,20 @@ class JSONWebTokenLoginHandler(BaseHandler):
                     if d is None:
                         break
                 return d
+            
+            # Check for admin and add to roles accordingly
             admin = get_nested(user_json_response, user_api_param_role) == user_admin_indicator
-        
+            if admin:
+                roles.append({
+                    "name": f"admin-{username}",
+                    "scopes": base_scopes + admin_scopes,  # you can include base_scopes here too
+                })
+            else:
+                roles.append({
+                    "name": f"user-{username}",
+                    "scopes": base_scopes,
+                })
+
         # Access collaborative project if one is specified or if there is only one
         if (enable_rtc):
 
@@ -202,32 +224,11 @@ class JSONWebTokenLoginHandler(BaseHandler):
                 if not admin and spawn_redirect_username:
                     _url=url_path_join(self.hub.server.base_url, 'spawn', spawn_redirect_username)
                             
-        # assign the group to the role, so it has access to the account
-        # assign members of the project to the collaboration group, so they have access to the project
-        base_scopes = [
-            "servers",
-            "read:users:me",
-        ]
-
-        admin_scopes = [
-            "admin:users",        # manage users
-            "admin:servers",      # manage user servers
-            "admin:groups",       # manage groups
-            "admin:roles",        # manage roles
-            "admin:ui",           # access admin UI
-            "servers",            # access own server (redundant but safe)
-            "read:users:me",      # read own info
-        ]
-
-        scopes = base_scopes + (admin_scopes if admin else [])
-        print("Computed scopes:", scopes)
-        
         user = await self.auth_to_user({
             'name': username,
             'admin': admin,
             'groups': groups,
             'roles': roles,
-            'scopes': scopes,
         })
         
         print("Name:", user.name)
